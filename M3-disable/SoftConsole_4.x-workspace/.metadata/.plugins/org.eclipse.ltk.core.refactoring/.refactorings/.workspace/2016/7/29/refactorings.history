@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<session version="1.0">
+<refactoring comment="Rename resource &apos;SF2_GNU_SC4_GPIO_simple_blink&apos; to &apos;M3_Disable&apos;" description="Rename resource &apos;SF2_GNU_SC4_GPIO_simple_blink&apos;" flags="7" id="org.eclipse.ltk.core.refactoring.rename.resource" input="/SF2_GNU_SC4_GPIO_simple_blink" name="M3_Disable" stamp="1469006634317" updateReferences="true"/>
+</session>

@@ -1,0 +1,7 @@
+/CMSIS/
+/drivers/
+/drivers_config/
+/hal/
+/makefile
+/objects.mk
+/sources.mk
