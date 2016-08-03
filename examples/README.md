@@ -16,7 +16,33 @@ A build of the version of openocd allowing debugging using FlashPro5 is availabl
 Once extracted you will need to export LD_LIRARY_PATH to point at the openocd-riscv-flashpro-install/bin directory. e.g:
 ```sh
 $ tar -xvf openocd-riscv-flashpro-install.tar.gz
-$ cd openocd-riscv-flashpro-install
+$ cd openocd-riscv-flashpro-install/bin
 $ export LD_LIRARY_PATH=$(pwd)
 $ ./openocd -f board/microsemi-riscv.cfg
+```
+
+Once openocd is running, start GDB in another terminal.
+```sh
+$ riscv64-unknown-elf-gdb <my_executable>
+```
+
+In GDB, connect to the target, load the executable to debug and run.
+```sh
+(gdb) target remote localhost:3333
+Remote debugging using localhost:3333
+0x60000ff8 in ?? ()
+(gdb) load
+Loading section .text, size 0x5110 lma 0x80000000
+Loading section .eh_frame, size 0x4a8 lma 0x80005110
+Loading section .rodata, size 0x894 lma 0x800055b8
+Loading section .sdata, size 0x4 lma 0x80040000
+Start address 0x80000000, load size 24144
+Transfer rate: 71 KB/sec, 2682 bytes/write.
+(gdb) b main
+Breakpoint 1 at 0x800003c4
+(gdb) c
+Continuing.
+
+Breakpoint 1, 0x800003c4 in main ()
+(gdb) 
 ```
