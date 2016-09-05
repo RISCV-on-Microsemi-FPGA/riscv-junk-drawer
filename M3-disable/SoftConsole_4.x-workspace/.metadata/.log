@@ -859,3 +859,16 @@ org.eclipse.core.internal.resources.ResourceException: Resource '/M3-Disable_M2S
 !MESSAGE Resource '/M3-Disable_M2S150-Adv-Dev-Kit_Enable-DDR/Release/sources.mk' does not exist.
 !SUBENTRY 1 org.eclipse.core.resources 4 368 2016-08-02 15:18:42.980
 !MESSAGE Resource '/M3-Disable_M2S150-Adv-Dev-Kit_Enable-DDR/Release/sources.mk' does not exist.
+!SESSION 2016-09-04 21:57:30.042 -----------------------------------------------
+eclipse.buildId=4.4.2.M20150204-1700
+java.version=1.8.0_102
+java.vendor=Oracle Corporation
+BootLoader constants: OS=linux, ARCH=x86, WS=gtk, NL=en_IE
+Framework arguments:  -pluginCustomization plugin_customization.ini
+Command-line arguments:  -os linux -ws gtk -arch x86 -pluginCustomization plugin_customization.ini
+
+!ENTRY org.eclipse.core.resources 2 10035 2016-09-04 21:59:54.357
+!MESSAGE The workspace exited with unsaved changes in the previous session; refreshing workspace to recover changes.
+
+!ENTRY org.eclipse.cdt.core 1 0 2016-09-04 22:04:55.338
+!MESSAGE Indexed 'M3-Disable_M2S025-FutureCreativeBoard-DDR' (0 sources, 0 headers) in 0.001 sec: 0 declarations; 0 references; 0 unresolved inclusions; 0 syntax errors; 0 unresolved names (0%)

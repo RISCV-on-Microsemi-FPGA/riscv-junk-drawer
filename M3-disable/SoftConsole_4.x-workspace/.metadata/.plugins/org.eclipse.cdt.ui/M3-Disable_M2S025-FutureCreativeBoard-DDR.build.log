@@ -2,3 +2,6 @@
 make clean 
 rm -rf  ./hal/CortexM3/GNU/hal.o ./hal/CortexM3/GNU/hw_reg_access.o  ./hal/CortexM3/cortex_nvic.o  ./drivers_config/sys_config/sys_config.o  ./drivers/mss_gpio/mss_gpio.o  ./CMSIS/startup_gcc/newlib_stubs.o ./CMSIS/startup_gcc/startup_m2sxxx.o  ./CMSIS/system_m2sxxx.o  ./main.o  M3-Disable_M2S025-FutureCreativeBoard-DDR.hex  M3-Disable_M2S025-FutureCreativeBoard-DDR.siz  ./hal/CortexM3/GNU/hal.d ./hal/CortexM3/GNU/hw_reg_access.d  ./CMSIS/startup_gcc/startup_m2sxxx.d  ./hal/CortexM3/cortex_nvic.d  ./drivers_config/sys_config/sys_config.d  ./drivers/mss_gpio/mss_gpio.d  ./CMSIS/startup_gcc/newlib_stubs.d  ./CMSIS/system_m2sxxx.d  ./main.d  M3-Disable_M2S025-FutureCreativeBoard-DDR.elf
  
+
+17:17:36 Build Finished (took 72ms)
+
