@@ -75,7 +75,26 @@ extern UART_instance_t g_uart;
  * Instruction message. This message will be transmitted over the UART to
  * HyperTerminal when the program starts.
  *****************************************************************************/
-uint8_t g_message[] =
+const uint8_t g_greeting_msg[] =
+"\r\n\r\n\
+===============================================================================\r\n\
+                    Microsemi RISC-V Boot-loader v0.0.7\r\n\
+===============================================================================\r\n\
+";
+
+const uint8_t g_instructions_msg[] =
+"\r\n\r\n\
+ Type 0 to show this menu\n\r\
+ Type 1 to copy to kick-off Ymodem transfer\n\r\
+ Type 2 copy program to flash \n\r\
+ Type 3 copy program from flash to DDDR \n\r\
+ Type 4 kick-off program in DDR \n\r\
+ Type 5 to test Flash device 0\n\r\
+ Type 6 to test DDR\n\r\
+ Type 7 to test soft rest reloading program to LSRAM (CoreBootStrap)\n\r\
+";
+
+const uint8_t g_message[] =
 "\n\r\n\r\n\r\
 Simple RTG4 Dev. kit boot-loader demo (CoreBootStrap) 0.0.7\n\r\
 All characters typed will be echoed back.\n\r\
@@ -144,10 +163,10 @@ int main()
 			BAUD_VALUE_115200, (DATA_8_BITS | NO_PARITY) );
 
 
-     /**************************************************************************
-      * Send the instructions message.
-      *************************************************************************/
-	UART_send( &g_uart, g_message, sizeof(g_message) );
+    /**************************************************************************
+     * Display greeting message message.
+     *************************************************************************/
+	UART_polled_tx_string( &g_uart, g_greeting_msg);
 
     /**************************************************************************
      * Set up CoreTimer
@@ -194,10 +213,13 @@ int main()
 	if (GPIO_get_inputs( &g_gpio) & 0x04)
 	{
 		wait_in_bl = 1;
+        UART_polled_tx_string( &g_uart, "\r\n Bootloader jumper/switch set to stay in bootloader.\r\n");
+        UART_polled_tx_string( &g_uart, g_instructions_msg);
 	}
 	else
 	{
 		wait_in_bl = 0;
+        UART_polled_tx_string( &g_uart, "\r\n Bootloader jumper/switch set to start application.\r\n");
 	}
 
     while(wait_in_bl == 1)
@@ -218,7 +240,7 @@ int main()
             switch(rx_data[0])
             {
                 case '0':
-                    UART_send( &g_uart, g_message, sizeof(g_message) );
+                    UART_polled_tx_string( &g_uart, g_instructions_msg);
                     break;
                 case '1':
                     rx_app_file((uint8_t *)DDR_BASE_ADDRESS);
@@ -261,7 +283,9 @@ int main()
             }
         }
     }
+    UART_polled_tx_string( &g_uart, "\r\n Loading application from SPI flash into DDR memory.\r\n");
     read_program_from_flash((uint8_t *)DDR_BASE_ADDRESS);
+    UART_polled_tx_string( &g_uart, "\r\n Executing application in DDR memory.\r\n");
     Bootloader_JumpToApplication(0x70000000, 0x70000004);
     /* will never reach here! */
     while(1);
