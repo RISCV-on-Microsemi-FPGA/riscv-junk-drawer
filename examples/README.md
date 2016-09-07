@@ -16,7 +16,7 @@ A build of the version of openocd allowing debugging using FlashPro5 is availabl
 Once extracted you will need to export LD_LIRARY_PATH to point at the openocd-riscv-flashpro-install/bin directory. e.g:
 ```sh
 $ tar -xvf openocd-riscv-flashpro-install.tar.gz
-$ cd openocd-riscv-flashpro-install/bin
+$ cd openocd/bin
 $ export LD_LIRARY_PATH=$(pwd)
 $ ./openocd -f board/microsemi-riscv.cfg
 ```
