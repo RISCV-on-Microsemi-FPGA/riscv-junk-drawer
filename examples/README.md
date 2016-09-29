@@ -13,11 +13,11 @@ Alternatively, a build of the toolchain is available from the following link: ft
 ### Debugging using FlashPro5
 A build of the version of openocd allowing debugging using FlashPro5 is available from the following link: ftp://ftp.actel.com/outgoing/RISC-V/toolchain/latest/openocd-riscv-flashpro-install.tar.gz
 
-Once extracted you will need to export LD_LIRARY_PATH to point at the openocd-riscv-flashpro-install/bin directory. e.g:
+Once extracted you will need to export LD_LIBRARY_PATH to point at the openocd-riscv-flashpro-install/bin directory. e.g:
 ```sh
 $ tar -xvf openocd-riscv-flashpro-install.tar.gz
 $ cd openocd/bin
-$ export LD_LIRARY_PATH=$(pwd)
+$ export LD_LIBRARY_PATH=$(pwd)
 $ ./openocd -f board/microsemi-riscv.cfg
 ```
 
