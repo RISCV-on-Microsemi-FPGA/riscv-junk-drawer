@@ -11,6 +11,7 @@
  * SVN $Revision: $
  * SVN $Date: $
  */
+#include <unistd.h>
 
 #include "hw_platform.h"
 
@@ -48,6 +49,13 @@ static int read_program_from_flash(uint8_t *read_buf);
 #define DELAY_LOAD_VALUE     0x00008000
 
 /*
+ * Bit mask identifying the DIP switch used to indicate whether the boot loader
+ * should load and launch the application on system reset or stay running to
+ * allow a new image to be programming into the SPI flash.
+ */
+#define BOOTLOADER_DIP_SWITCH   0x00000001
+
+/*
  * CoreGPIO instance data.
  */
 gpio_instance_t g_gpio;
@@ -75,19 +83,61 @@ extern UART_instance_t g_uart;
  * Instruction message. This message will be transmitted over the UART to
  * HyperTerminal when the program starts.
  *****************************************************************************/
-uint8_t g_message[] =
-"\n\r\n\r\n\r\
-Simple RTG4 Dev. kit boot-loader demo (CoreBootStrap) 0.0.7\n\r\
-All characters typed will be echoed back.\n\r\
-Type 0 to show this menu\n\r\
-Type 1 to copy to kick-off Ymodem transfer\n\r\
-Type 2 copy program to flash \n\r\
-Type 3 copy program from flash to DDDR \n\r\
-Type 4 kick-off program in DDR \n\r\
-Type 5 to test Flash device 0\n\r\
-Type 6 to test DDR\n\r\
-Type 7 to test soft rest reloading program to LSRAM (CoreBootStrap)\n\r\
+const uint8_t g_greeting_msg[] =
+"\r\n\r\n\
+===============================================================================\r\n\
+                    Microsemi RISC-V Boot Loader v0.0.8\r\n\
+===============================================================================\r\n\
+ This boot loader provides the following features:\r\n\
+    - Load a program into DDR memory using the YModem file transfer protocol.\r\n\
+    - Write a program into the board's SPI flash. The executable must first be\r\n\
+      loaded into the board's DDR memory using the YModem file transfer\r\n\
+      protocol.\r\n\
+    - Load a program from SPI flash into external DDR memory and launch the\r\n\
+      program.\r\n\
+    - Automatically load and execute a program from SPI flash depending on DIP\r\n\
+      switch 0 position.\r\n\
 ";
+
+const uint8_t g_instructions_msg[] =
+"\r\n\r\n\
+-------------------------------------------------------------------------------\r\n\
+ Type 0 to show this menu\n\r\
+ Type 1 to start Ymodem transfer to DDR memory\n\r\
+ Type 2 to copy program from DDR to flash \n\r\
+ Type 3 to copy program from flash to DDR \n\r\
+ Type 4 to start program loaded in DDR \n\r\
+ Type 5 to test Flash device 0\n\r\
+ Type 6 to test DDR\n\r\
+";
+
+const uint8_t g_boot_dip_switch_off_msg[] =
+"\r\n\
+-------------------------------------------------------------------------------\r\n\
+ Boot loader jumper/switch set to start application.\r\n\
+ Toggle DIP switch 0 and reset the board if you wish to execute the boot loader\r\n\
+ to load another application into the SPI flash.\r\n\
+";
+
+const uint8_t g_boot_dip_switch_on_msg[] =
+"\r\n\
+-------------------------------------------------------------------------------\r\n\
+ Boot loader jumper/switch set to stay in boot loader.\r\n\
+ Toggle DIP switch 0 and reset the board if you wish to automatically execute\r\n\
+ the application stored in the SPI flash on reset.\r\n\
+";
+
+const uint8_t g_load_executable_msg[] =
+"\r\n\
+-------------------------------------------------------------------------------\r\n\
+ Loading application from SPI flash into DDR memory.\r\n";
+
+const uint8_t g_run_executable_msg[] =
+"\r\n\
+-------------------------------------------------------------------------------\r\n\
+ Executing application in DDR memory.\r\n\
+-------------------------------------------------------------------------------\r\n\
+ \r\n";
 
 /******************************************************************************
  * Timer load value. This value is calculated to result in the timer timing
@@ -144,10 +194,10 @@ int main()
 			BAUD_VALUE_115200, (DATA_8_BITS | NO_PARITY) );
 
 
-     /**************************************************************************
-      * Send the instructions message.
-      *************************************************************************/
-	UART_send( &g_uart, g_message, sizeof(g_message) );
+    /**************************************************************************
+     * Display greeting message message.
+     *************************************************************************/
+	UART_polled_tx_string( &g_uart, g_greeting_msg);
 
     /**************************************************************************
      * Set up CoreTimer
@@ -191,13 +241,16 @@ int main()
    	/*
 	 * Check to see if boot-loader switch is set
 	 */
-	if (GPIO_get_inputs( &g_gpio) & 0x04)
+	if (GPIO_get_inputs( &g_gpio) & BOOTLOADER_DIP_SWITCH)
 	{
 		wait_in_bl = 1;
+        UART_polled_tx_string( &g_uart, g_boot_dip_switch_on_msg);
+        UART_polled_tx_string( &g_uart, g_instructions_msg);
 	}
 	else
 	{
 		wait_in_bl = 0;
+        UART_polled_tx_string( &g_uart, g_boot_dip_switch_off_msg);
 	}
 
     while(wait_in_bl == 1)
@@ -218,7 +271,7 @@ int main()
             switch(rx_data[0])
             {
                 case '0':
-                    UART_send( &g_uart, g_message, sizeof(g_message) );
+                    UART_polled_tx_string( &g_uart, g_instructions_msg);
                     break;
                 case '1':
                     rx_app_file((uint8_t *)DDR_BASE_ADDRESS);
@@ -261,7 +314,9 @@ int main()
             }
         }
     }
+    UART_polled_tx_string( &g_uart, g_load_executable_msg);
     read_program_from_flash((uint8_t *)DDR_BASE_ADDRESS);
+    UART_polled_tx_string( &g_uart, g_run_executable_msg);
     Bootloader_JumpToApplication(0x70000000, 0x70000004);
     /* will never reach here! */
     while(1);
@@ -487,7 +542,7 @@ static int test_flash(void)
                             &write_buffer[count] );
    }
 
-   UART_send( &g_uart, "Flash test success\n\r", strlen("Flash test success\n\r") );
+   UART_polled_tx_string( &g_uart, "  Flash test success\n\r" );
 
    return(0);
 }
@@ -710,7 +765,7 @@ static int write_program_to_flash(uint8_t *write_buf)
                             &write_buffer[count] );
    }
 
-   UART_send( &g_uart, "Flash write success\n\r", strlen("Flash write success\n\r") );
+   UART_polled_tx_string( &g_uart, "  Flash write success\n\r" );
 
    return(0);
 }
@@ -770,7 +825,7 @@ static int read_program_from_flash(uint8_t *read_buf)
         flash_address += FLASH_SEGMENT_SIZE; /* Step to the next 256 byte chunk */
     }
 
-   UART_send( &g_uart, "Flash read success\n\r", strlen("Flash read success\n\r") );
+   UART_polled_tx_string( &g_uart, "  Flash read success\n\r" );
 
    return(0);
 }
@@ -786,9 +841,9 @@ static void mem_test(uint8_t *address)
     value = *address;
     value32 = (uint32_t)*address;
     if((value32 == value) &&(value == 1))
-    	UART_send( &g_uart, "Read/Write success\n\r", strlen("Read/Write success\n\r") );
+    	UART_polled_tx_string( &g_uart, "  Read/Write success\n\r" );
     else
-    	UART_send( &g_uart, "Read/Write fail\n\r", strlen("Read/Write fail\n\r") );
+    	UART_polled_tx_string( &g_uart, "  Read/Write fail\n\r" );
 }
 
 

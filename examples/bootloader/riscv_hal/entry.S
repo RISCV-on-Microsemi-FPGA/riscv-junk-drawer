@@ -125,6 +125,7 @@ trap_entry:
   mret
 
   // Fill the stack with data so we can see if it was overrun.
+  .bss
   .align 4
 stack_bottom:
   .fill STACK_SIZE/4, 4, 0x22446688

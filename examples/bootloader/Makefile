@@ -3,9 +3,8 @@
 # link.lds:		Builds your program to execute from SmartFusion eNVM.
 # all-ram.lds:	Builds a program that can be loaded to memory with the debugger.
 #
-#LINKER_SCRIPT := ./link.lds
-#LINKER_SCRIPT := ./all-ram.lds
 LINKER_SCRIPT := ./bootloader_debug.lds
+#LINKER_SCRIPT := ./bootloader_run_from_nvm.lds
 
 C_DEFINES = -DUSE_PLIC
 
