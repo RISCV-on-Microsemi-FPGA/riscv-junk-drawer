@@ -5,16 +5,16 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "shared.h"
+#include "hw_platform.h"
+#include "riscv_hal.h"
+#include "core_gpio.h"
+#include "core_timer.h"
+#include "core_uart_apb.h"
+
+extern UART_instance_t g_uart;
 
 const char * g_hello_msg = "\r\nInterrupt Blinky Example\r\n";
   
-/******************************************************************************
- * PLIC instance data.
- *****************************************************************************/
-
-plic_instance_t g_plic;
-
 /******************************************************************************
  * GPIO instance data.
  *****************************************************************************/
@@ -37,7 +37,7 @@ uint32_t g_state;
 uint8_t g_done;
 
 /*Core Timer 0 Interrupt Handler*/
-void interrupt_handler_30() {
+void External_30_IRQHandler() {
   uint32_t stable;
   uint32_t gpout;
   
@@ -72,31 +72,13 @@ void interrupt_handler_31() {
 }
 
 
-/*Entry Point for PLIC Interrupt Handler*/
-void handle_m_ext_interrupt(){
-  plic_source int_num  = PLIC_claim_interrupt(&g_plic);
-  switch(int_num) {
-  case (0):
-    break;
-  case (30): 
-    interrupt_handler_30();
-    break;
-  case (31): 
-    interrupt_handler_31();
-    break;
-  default: 
-    _exit(10 + (uintptr_t) int_num);
-  }
-  PLIC_complete_interrupt(&g_plic, int_num);
-}
-
 int main(int argc, char **argv)
 {
   uint8_t rx_char;
   uint8_t rx_count;
   uint32_t switches;
 
-  PLIC_init(&g_plic, PLIC_BASE_ADDR, PLIC_NUM_SOURCES, PLIC_NUM_PRIORITIES);
+  PLIC_init();
   
   GPIO_init(&g_gpio0, COREGPIO_IN_BASE_ADDR, GPIO_APB_32_BITS_BUS);
   GPIO_init(&g_gpio1, COREGPIO_OUT_BASE_ADDR, GPIO_APB_32_BITS_BUS);
@@ -116,16 +98,18 @@ int main(int argc, char **argv)
   // Lower numbered devices have higher priorities.
   // But this code is given as an
   // example.
-  PLIC_set_priority(&g_plic, INT_DEVICE_TIMER0, 1);  
+    PLIC_SetPriority(External_30_IRQn, 1);
 
   // Enable Timer 1 & 0 Interrupt
-  PLIC_enable_interrupt(&g_plic, INT_DEVICE_TIMER0);  
+    PLIC_EnableIRQ(External_30_IRQn);
 
   // Enable the Machine-External bit in MIE
-  set_csr(mie, MIP_MEIP);
+//  set_csr(mie, MIP_MEIP);
 
   // Enable interrupts in general.
-  set_csr(mstatus, MSTATUS_MIE);
+//  set_csr(mstatus, MSTATUS_MIE);
+
+    __enable_irq();
 
   // Enable the timers...
   TMR_enable_int(&g_timer0);

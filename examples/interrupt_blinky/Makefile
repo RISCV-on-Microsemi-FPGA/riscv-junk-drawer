@@ -10,26 +10,28 @@ C_DEFINES = -DUSE_PLIC
 
 TARGET = interrupt_blinky
 
-ASM_SRCS += ./entry.S
+ASM_SRCS += ./riscv_hal/entry.S
 
 C_SRCS += ./hal/hw_reg_access.c
-C_SRCS += ./init.c
-C_SRCS += ./syscall.c
+C_SRCS += ./riscv_hal/init.c
+C_SRCS += ./riscv_hal/syscall.c
+C_SRCS += ./riscv_hal/riscv_hal.c
+C_SRCS += ./riscv_hal/riscv_hal_stubs.c
 C_SRCS += ./drivers/CoreGPIO/core_gpio.c
 C_SRCS += ./drivers/CoreUARTapb/core_uart_apb.c
 C_SRCS += ./drivers/CoreTimer/core_timer.c
-C_SRCS += ./drivers_sifive/plic.c
 
 HEADERS += ./hal/*.h
+HEADERS += ./riscv_hal/*.h
 HEADERS += ./drivers/*/*.h
 HEADERS += ./*.h
 
 C_SRCS += $(TARGET).c
 INCLUDES += -I.
+INCLUDES += -I./riscv_hal
 INCLUDES += -I./drivers/CoreGPIO
 INCLUDES += -I./drivers/CoreUARTapb
 INCLUDES += -I./drivers/CoreTimer
-INCLUDES += -I./drivers_sifive/
 INCLUDES += -I./hal
 
 ASM_OBJS := $(patsubst %.S,%.o,$(ASM_SRCS))
@@ -38,9 +40,6 @@ C_OBJS := $(patsubst %.c,%.o,$(C_SRCS))
 CC := riscv32-unknown-elf-gcc
 CFLAGS := -Og -g -march=RV32IM -fno-common -fno-jump-tables $(INCLUDES) $(C_DEFINES)
 LDFLAGS := -T $(LINKER_SCRIPT) -nostdlib -nostartfiles -lc -lgcc
-LDFLAGS += -L$.
-LDFLAGS += -L$./drivers
-LDFLAGS += -L$./hal
 
 $(TARGET): $(ASM_OBJS) $(C_OBJS) $(LINKER_SCRIPT)
 	$(CC) $(CFLAGS) $(C_OBJS) -o $@ $(LDFLAGS)
@@ -62,6 +61,6 @@ default: $(TARGET).ihx
 all: default
 
 clean:
-	rm -f $(TARGET) *.o *.ihx ./*.o ./drivers/*/*.o ./hal/*.o  ./drivers_sifive/*.o
+	rm -f $(TARGET) *.o *.ihx ./*.o ./drivers/*/*.o ./hal/*.o ./riscv_hal/*.o
 
 .PHONY: clean all default
