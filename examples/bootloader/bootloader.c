@@ -14,6 +14,7 @@
 #include <unistd.h>
 
 #include "hw_platform.h"
+#include "riscv_hal.h"
 
 #include "drivers/CoreGPIO/core_gpio.h"
 #include "drivers/CoreUARTapb/core_uart_apb.h"
@@ -70,11 +71,6 @@ volatile uint32_t g_state;
 #define MAX_RX_DATA_SIZE    256
 
 /******************************************************************************
- * PLIC instance data.
- *****************************************************************************/
-plic_instance_t g_plic;
-
-/******************************************************************************
  * CoreUARTapb instance data.
  *****************************************************************************/
 extern UART_instance_t g_uart;
@@ -86,7 +82,7 @@ extern UART_instance_t g_uart;
 const uint8_t g_greeting_msg[] =
 "\r\n\r\n\
 ===============================================================================\r\n\
-                    Microsemi RISC-V Boot Loader v0.0.8\r\n\
+                    Microsemi RISC-V Boot Loader v0.0.9\r\n\
 ===============================================================================\r\n\
  This boot loader provides the following features:\r\n\
     - Load a program into DDR memory using the YModem file transfer protocol.\r\n\
@@ -151,12 +147,6 @@ const uint8_t g_run_executable_msg[] =
  *****************************************************************************/
 gpio_instance_t g_gpio;
 
-/******************************************************************************
- * Timer 0 instance data.
- *****************************************************************************/
-timer_instance_t g_timer0;
-timer_instance_t g_timer1;
-
 /*-------------------------------------------------------------------------*//**
  * main() function.
  */
@@ -164,15 +154,14 @@ int main()
 {
 	uint8_t rx_data[MAX_RX_DATA_SIZE];
 	size_t rx_size;
-	uint32_t frequency = 100;
-	char message[100], wait_in_bl;
+	char wait_in_bl;
 
     g_10ms_count = 0;
     
     /**************************************************************************
      * Initialize the RISC-V platform level interrupt controller. 
      *************************************************************************/
-    PLIC_init(&g_plic, PLIC_BASE_ADDR, PLIC_NUM_SOURCES, PLIC_NUM_PRIORITIES);
+    PLIC_init();
     
     /**************************************************************************
      * Initialize the CoreGPIO driver with the base address of the CoreGPIO
@@ -193,50 +182,15 @@ int main()
 	UART_init( &g_uart, COREUARTAPB0_BASE_ADDR,\
 			BAUD_VALUE_115200, (DATA_8_BITS | NO_PARITY) );
 
-
     /**************************************************************************
      * Display greeting message message.
      *************************************************************************/
 	UART_polled_tx_string( &g_uart, g_greeting_msg);
 
     /**************************************************************************
-     * Set up CoreTimer
+     * Set up the system tick timer
      *************************************************************************/
-#if 1     
-    TMR_init(&g_timer0,
-             CORETIMER0_BASE_ADDR,
-             TMR_CONTINUOUS_MODE,
-             PRESCALER_DIV_1024, // (83MHZ / 1024) ~ 83kHz
-             810); // (83kHz / 810) ~ 10ms
-           
-    // In this version of the PLIC, the priorities are fixed at 1.
-    // Lower numbered devices have higher priorities.
-    // But this code is given as an
-    // example.
-    PLIC_set_priority(&g_plic, TIMER0_IRQn, 1);  
-
-    // Enable Timer 1 & 0 Interrupt
-    PLIC_enable_interrupt(&g_plic, TIMER0_IRQn);  
-
-    // Enable the Machine-External bit in MIE
-    set_csr(mie, MIP_MEIP);
-
-    // Enable interrupts in general.
-    set_csr(mstatus, MSTATUS_MIE);
-    
-    g_state = 1;
-
-    // Enable the timers...
-    TMR_enable_int(&g_timer0);
-
-    // Start the timer
-    TMR_start(&g_timer0);
-#endif
-
-    /**************************************************************************
-     * Start the timer.
-     *************************************************************************/
-    TMR_start( &g_timer0 );
+    SysTick_Config(SystemCoreClock / 100);
 
    	/*
 	 * Check to see if boot-loader switch is set
@@ -776,8 +730,6 @@ static int write_program_to_flash(uint8_t *write_buf)
  */
 static int read_program_from_flash(uint8_t *read_buf)
 {
-    uint8_t write_buffer[FLASH_SEGMENT_SIZE];
-    uint8_t read_buffer[FLASH_SEGMENT_SIZE];
     uint16_t status;
     int flash_address = 0;
     int count = 0;
@@ -854,7 +806,7 @@ static void rx_app_file(uint8_t *dest_address)
 {
     uint8_t     received;
     uint8_t *g_bin_base = (uint8_t *)dest_address;
-    uint32_t g_rx_size = 1024 * 16;
+    uint32_t g_rx_size = 1024 * 1024;
     received = ymodem_receive(g_bin_base, g_rx_size);
 }
 
@@ -890,58 +842,7 @@ void SysTick_Handler( void )
         g_10ms_count = 0;
 }
 
-/***************************************************************************//**
-* CoreTimer 0 Interrupt Handler.
-*/
-void Timer0_IRQHandler() {
-    uint32_t stable;
-    uint32_t gpout;
-  
-    stable = GPIO_get_inputs(&g_gpio);
-    gpout = ~stable & 0x000000F0;
-  
-    g_state = g_state << 1;
-    if (g_state > 4) {
-        g_state = 0x01;
-    }
-    gpout = gpout | g_state;
-   
-  
-    GPIO_set_outputs(&g_gpio, gpout);
- 
-    g_10ms_count += 10;
-
-     /*
-      * For neatness, if we roll over, reset cleanly back to 0 so the count
-      * always goes up in proper 10s.
-      */
-    if(g_10ms_count < 10)
-        g_10ms_count = 0;
-  
-    TMR_clear_int(&g_timer0);
-}
-
-/******************************************************************************
- * RISC-V interrupt handler for external interrupts.
- *****************************************************************************/
-/*Entry Point for PLIC Interrupt Handler*/
-void handle_m_ext_interrupt(){
-  plic_source int_num  = PLIC_claim_interrupt(&g_plic);
-  switch(int_num) {
-  case (0):
-    break;
-  case (External_30_IRQn): 
-    Timer0_IRQHandler();
-    break;
-  case (External_31_IRQn): 
-    break;
-  default: 
-    _exit(10 + (uintptr_t) int_num);
-  }
-  PLIC_complete_interrupt(&g_plic, int_num);
-}
-
-/*
+/*------------------------------------------------------------------------------
  * Call this function if you want to switch to another program
  * de-init any loaded drivers before calling this function
  */

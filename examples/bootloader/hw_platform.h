@@ -38,8 +38,6 @@
 #ifndef HW_PLATFORM_H
 #define HW_PLATFORM_H
 
-#include "riscv.h"
-
 /***************************************************************************//**
  * Soft-processor clock definition
  * This is the only clock brought over from the Cortex-M1 Libero design.

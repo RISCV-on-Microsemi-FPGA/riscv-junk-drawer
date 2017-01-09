@@ -14,13 +14,14 @@ ASM_SRCS +=
 RISCV_HAL_ASM_SRCS := ./riscv_hal/entry.S
 
 C_SRCS += ./hal/hw_reg_access.c
+C_SRCS += ./riscv_hal/riscv_hal.c
 C_SRCS += ./riscv_hal/syscall.c
 C_SRCS += ./riscv_hal/init.c
+C_SRCS += ./riscv_hal/riscv_hal_stubs.c
 C_SRCS += ./drivers/CoreGPIO/core_gpio.c
 C_SRCS += ./drivers/CoreUARTapb/core_uart_apb.c
 C_SRCS += ./drivers/CoreTimer/core_timer.c
 C_SRCS += ./drivers/CoreSPI/core_spi.c
-C_SRCS += ./drivers_sifive/plic.c
 C_SRCS += ./spi_flash/spi_flash.c
 C_SRCS += ./ymodem/ymodem.c
 
@@ -35,7 +36,6 @@ INCLUDES += -I./drivers/CoreUARTapb
 INCLUDES += -I./drivers/CoreTimer
 INCLUDES += -I./drivers/CoreSPI
 INCLUDES += -I./spi_flash
-INCLUDES += -I./drivers_sifive/
 INCLUDES += -I./hal
 INCLUDES += -I./riscv_hal
 
